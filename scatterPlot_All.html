@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Happiness & Sustainability</title>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <link rel="stylesheet" href="./style.css" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Lato:ital,wght@0,300;0,400;0,700;0,900;1,300;1,400;1,900&family=Roboto+Mono:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;1,100;1,200;1,300;1,400;1,500&display=swap"
+      rel="stylesheet"
+    />
+  </head>
+  <body>
+    <div class="background">
+      <div class="intro">
+        <h1>Are happy countries more sustainable?</h1>
+        <p>
+          Many studies affirm that close contact to nature has a positive and
+          big impact in human happiness. Therefore, we asked ourselves if this
+          same trend could be traced between countries and their level of
+          happiness.
+        </p>
+        <p>
+          As an approximation to measure the level of nature we relied on the
+          level of sustainability with the Sustainable Development Index (SDI)
+          and good and cleaner environment with the Co2 Emissions and Material
+          Footprint per capita.
+        </p>
+        <p>
+          <i
+            >Use the filter to select between the Sustainable Development Index,
+            Co2 Emissions per person and Material Footprint per person. Hover
+            over each country to read the exact information.
+          </i>
+        </p>
+      </div>
+      <!-- Initialize a select button -->
+      <div class="filter"><select id="selectButton2"></select></div>
+      <svg id="Hap_Sdi" height="950" width="1450"></svg>
+      <div class="end">
+        <p>
+          <b>Variables used:</b>
+        </p>
+        <p>
+          The Happiness index is a perceptual calculation based on individual
+          answers to perceptions of where are people staying in an imaginary
+          ladder from 1 to 10 in what steps they are standing in comparison to
+          where they could stand. <br />
+
+          The Sustainable Development Index (SDI) is an indicator calculated to
+          consider countries human development index and their ecological impact
+          tied. It promotes a more complex development notion that one just
+          based on social and economical aspects and brings attention to nations
+          that perform well on key social indicators while staying close to or
+          within planetary boundaries.<br />
+
+          CO2 emissions per capita represents the carbon dioxide emissions from
+          the burning of fossil fuels (metric tonnes of CO2 per person).<br />
+
+          Material footprint is the total amount of raw materials such as
+          biomass, fossil fuels, metal ores and non-metal ores extracted every
+          year to meet the consumption demands for countries, it is calculated
+          by dividing the total material footprint by total population of a
+          country.
+        </p>
+        <p>
+          <i
+            >All data was retrieved from
+            <a href="http://gapminder.com/data" target="_blank"
+              >gapminder.org</a
+            >
+            and the most recent and complete data set was used. In the case of
+            the Happiness Index, all observations are from 2019 except the
+            following: Cuba(2006), Guyana(2007), Djibouti (2011), Oman(2011),
+            Suriname (2012), Angola (2014), Belize (2014), Sudan (2014), Bhutan
+            (2015), Qatar (2015), Syria (2015), Somalia (2016).</i
+          >
+        </p>
+      </div>
+
+      <script>
+        var margin = { top: 30, right: 20, bottom: 30, left: 80 };
+        var width = 1400 - margin.left - margin.right;
+        var height = 950 - margin.top - margin.bottom;
+        var dictionary = {
+          materialFootprint2017: "Material footprint pp: ",
+          Co22018: "Co2 emissions pp: ",
+          sdi2019: "SDI: ",
+        };
+        var canvas = d3
+          .select("#Hap_Sdi")
+          .append("svg")
+          .attr("width", width)
+          .attr("height", height)
+          .append("g")
+          .attr("transform", "translate(90,25)")
+          .attr("class", "canvas");
+        var graphHeight = 700;
+        var graphWidth = 1080;
+        var div = d3
+          .select("body")
+          .append("div")
+          .attr("class", "tooltip")
+          .style("opacity", 0);
+
+        const allGroup = ["sdi2019", "Co22018", "materialFootprint2017"];
+
+        var selectedOption = allGroup[0];
+
+        //Import data
+        d3.csv("./data.csv").then(function (data) {
+          data = data.map(function (d) {
+            d.hap2019 = +d.hap2019;
+            d.sdi2019 = +d.sdi2019;
+            d.Co22018 = +d.Co22018;
+            d.materialFootprint2017 = +d.materialFootprint2017;
+            return d;
+          });
+          // add the options to the button
+          d3.select("#selectButton2")
+            .selectAll("myOptions")
+            .data(allGroup)
+            .enter()
+            .append("option")
+            .text((d) => d) // text showed in the menu
+            .attr("value", (d) => d); // corresponding value returned by the button
+
+          //scales
+          var scaleX = d3
+            .scaleLinear()
+            .domain([20, 100])
+            .range([0, graphWidth]);
+
+          // Find max value per column (Y)
+          var maxY = d3.max(data, function (d) {
+            return parseFloat(d[selectedOption]);
+          });
+
+          var scaleY = d3
+            .scaleLinear()
+            .domain([0, maxY])
+            .range([graphHeight, 0]);
+
+          //Add X axis
+          canvas
+            .append("g")
+            .call(d3.axisBottom(scaleX))
+            .attr("transform", "translate(0, 700)");
+          // x axis label
+          canvas
+            .append("text")
+            .style("text-anchor", "middle")
+            .attr("transform", "translate(" + graphWidth / 2 + " , 750)")
+            .classed("axis", true)
+            .text("Happiness");
+
+          //Add Y axis
+          canvas.append("g").attr("class", "yaxis").call(d3.axisLeft(scaleY));
+          canvas
+            .append("text")
+            .attr("transform", "rotate(-90)")
+            .attr("x", -(graphHeight / 2))
+            .attr("y", -40)
+            .style("text-anchor", "middle");
+
+          // scatter dots
+          // var scatterDots = canvas
+          //   .append("g")
+          //   .selectAll("dot")
+          //   .data(data)
+          //   .join("g");
+          // console.log(selectedOption);
+
+          var scatterDots = canvas
+            // scatterDots
+            .append("g")
+            .selectAll("circle")
+            .data(data)
+            .join("g")
+            //.enter()
+            //scatterDots
+            .append("circle")
+            .attr("cx", function (d) {
+              return scaleX(+d["hap2019"]);
+            })
+            .attr("cy", function (d) {
+              if (!isNaN(+d.sdi2019)) {
+                d3.select(this).attr("opacity", 1);
+                return scaleY(+d.sdi2019);
+              } else {
+                d3.select(this).attr("opacity", 0);
+              }
+            })
+            .attr("r", 6)
+            .classed("node", true)
+            // .attr("fill", "#5D7CA6")
+
+            // fill colors, highlight biggest cases
+            .attr("fill", function (d) {
+              if (d.country === "Costa Rica") {
+                return "#1B2A59";
+              } else if (d.country === "Panama") {
+                return "#1B2A59";
+              } else if (d.country === "Finland") {
+                return "#1B2A59";
+              } else if (d.country === "Denmark") {
+                return "#1B2A59";
+              } else if (d.country === "Switzerland") {
+                return "#1B2A59";
+              } else if (d.country === "Afghanistan") {
+                return "#1B2A59";
+              } else if (d.country === "India") {
+                return "#1B2A59";
+              } else {
+                return "#5D7CA6";
+              }
+            })
+
+            //tooltip
+            .on("mouseover", function (event, d) {
+              div.transition().duration(200).style("opacity", 0.9);
+              div
+                .html(
+                  d.country +
+                    "<br>" +
+                    " " +
+                    "Happiness index: " +
+                    d.hap2019 +
+                    "<br>" +
+                    " " +
+                    "SDI: " +
+                    d.sdi2019
+                )
+                .style("left", event.pageX + "px")
+                .style("top", event.pageY - 28 + "px");
+            })
+            .on("mouseout", function (d) {
+              div.transition().duration(500).style("opacity", 0);
+            });
+
+          // fixes labels for certain cases
+          // scatterDots
+          // .selectAll("text")
+          // .data(data)
+          // .enter()
+          var labeled = canvas
+            .append("g")
+            .selectAll("circle")
+            .data(data)
+            .join("g")
+            .append("text")
+            .classed("label", true)
+            .text(function (d) {
+              if (d.country === "Finland") {
+                return d.country;
+              } else if (d.country === "Costa Rica") {
+                return d.country;
+              } else if (d.country === "Panama") {
+                return d.country;
+              } else if (d.country === "Denmark") {
+                return d.country;
+              } else if (d.country === "Switzerland") {
+                return d.country;
+              } else if (d.country === "Afghanistan") {
+                return d.country;
+              } else if (d.country === "India") {
+                return d.country;
+              }
+            })
+            .attr("x", function (d) {
+              return scaleX(d.hap2019) + 12;
+            })
+            .attr("y", function (d) {
+              return scaleY(d[selectedOption]) + 5;
+            });
+
+          // A function that update the chart
+          function update(selected) {
+            console.log(selected);
+            // Create new data with the selection
+            const dataFilter = data.map(function (d) {
+              return {
+                happiness: d.hap2019,
+                value: d[selected],
+                country: d.country,
+              };
+            });
+
+            var maxY = d3.max(data, function (d) {
+              return parseFloat(d[selected]);
+            });
+
+            // Give these new data to update dots
+            var scaleY = d3
+              .scaleLinear()
+              .domain([0, maxY])
+              .range([graphHeight, 0]);
+
+            canvas
+              .select(".yaxis")
+              .transition()
+              .duration(1000)
+              .call(d3.axisLeft(scaleY));
+
+            scatterDots
+              .data(dataFilter)
+              //tooltip
+              .on("mouseover", function (event, d) {
+                console.log(d);
+                var index = data
+                  .map(function (e) {
+                    return e.country;
+                  })
+                  .indexOf(d.country);
+
+                div.transition().duration(200).style("opacity", 0.9);
+                div
+                  .html(
+                    d.country +
+                      " " +
+                      "<br>" +
+                      "Happiness index: " +
+                      d.happiness +
+                      " " +
+                      "<br>" +
+                      //prepare dictionary dictionary[selected]
+                      dictionary[selected] +
+                      data[index][selected]
+                  )
+                  .style("left", event.pageX + "px")
+                  .style("top", event.pageY - 28 + "px");
+              })
+              .on("mouseout", function (d) {
+                div.transition().duration(500).style("opacity", 0);
+              })
+              .transition()
+              .duration(1000)
+              .attr("cx", function (d) {
+                return scaleX(+d.happiness);
+              })
+              .attr("cy", function (d) {
+                if (!isNaN(+d.value)) {
+                  d3.select(this).attr("opacity", 1);
+                  return scaleY(+d.value);
+                } else {
+                  d3.select(this).attr("opacity", 0);
+                }
+              });
+            labeled.data(dataFilter).attr("y", function (d) {
+              return scaleY(d.value) + 5;
+            });
+          }
+          // When the button is changed, run the updateChart function
+          d3.select("#selectButton2").on("change", function (event, d) {
+            // recover the option that has been chosen
+            selectedOption = d3.select(this).property("value");
+
+            // run the updateChart function with this selected option
+            update(selectedOption);
+          });
+        });
+      </script>
+    </div>
+  </body>
+</html>
